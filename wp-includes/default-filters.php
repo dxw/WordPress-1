@@ -262,6 +262,8 @@ add_action( 'login_head',          'print_admin_styles',            9     );
 add_action( 'login_head',          'wp_site_icon',                  99    );
 add_action( 'login_footer',        'wp_print_footer_scripts',       20    );
 add_action( 'login_init',          'send_frame_options_header',     10, 0 );
+add_filter( 'check_password',      'wp_upgrade_password',           10, 4 );
+add_filter( 'wp_authenticate_user','wp_user_can_authenticate',      10, 1 );
 
 // Feed Generator Tags
 foreach ( array( 'rss2_head', 'commentsrss2_head', 'rss_head', 'rdf_header', 'atom_head', 'comments_atom_head', 'opml_head', 'app_head' ) as $action ) {

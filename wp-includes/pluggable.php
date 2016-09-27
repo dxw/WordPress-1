@@ -1739,8 +1739,8 @@ function wp_new_user_notification( $user_id, $deprecated = null, $notify = '' ) 
 
 	// Now insert the key, hashed, into the DB.
 	if ( empty( $wp_hasher ) ) {
-		require_once ABSPATH . WPINC . '/class-phpass.php';
-		$wp_hasher = new PasswordHash( 8, true );
+		require_once ABSPATH . WPINC . '/class-wp-hasher.php';
+		$wp_hasher = new WP_Hasher();
 	}
 	$hashed = time() . ':' . $wp_hasher->HashPassword( $key );
 	$wpdb->update( $wpdb->users, array( 'user_activation_key' => $hashed ), array( 'user_login' => $user->user_login ) );
@@ -2014,9 +2014,9 @@ function wp_hash_password($password) {
 	global $wp_hasher;
 
 	if ( empty($wp_hasher) ) {
-		require_once( ABSPATH . WPINC . '/class-phpass.php');
+		require_once( ABSPATH . WPINC . '/class-wp-hasher.php');
 		// By default, use the portable hash from phpass
-		$wp_hasher = new PasswordHash(8, true);
+		$wp_hasher = new WP_Hasher();
 	}
 
 	return $wp_hasher->HashPassword( trim( $password ) );
@@ -2074,9 +2074,9 @@ function wp_check_password($password, $hash, $user_id = '') {
 	// If the stored hash is longer than an MD5, presume the
 	// new style phpass portable hash.
 	if ( empty($wp_hasher) ) {
-		require_once( ABSPATH . WPINC . '/class-phpass.php');
+		require_once( ABSPATH . WPINC . '/class-wp-hasher.php');
 		// By default, use the portable hash from phpass
-		$wp_hasher = new PasswordHash(8, true);
+		$wp_hasher = new WP_Hasher();
 	}
 
 	$check = $wp_hasher->CheckPassword($password, $hash);

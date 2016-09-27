@@ -444,8 +444,8 @@ case 'postpass' :
 		exit();
 	}
 
-	require_once ABSPATH . WPINC . '/class-phpass.php';
-	$hasher = new PasswordHash( 8, true );
+	require_once ABSPATH . WPINC . '/class-wp-hasher.php';
+	$hasher = new WP_Hasher();
 
 	/**
 	 * Filters the life span of the post password cookie.

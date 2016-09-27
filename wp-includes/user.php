@@ -2095,8 +2095,8 @@ function get_password_reset_key( $user ) {
 
 	// Now insert the key, hashed, into the DB.
 	if ( empty( $wp_hasher ) ) {
-		require_once ABSPATH . WPINC . '/class-phpass.php';
-		$wp_hasher = new PasswordHash( 8, true );
+		require_once ABSPATH . WPINC . '/class-wp-hasher.php';
+		$wp_hasher = new WP_Hasher();
 	}
 	$hashed = time() . ':' . $wp_hasher->HashPassword( $key );
 	$key_saved = $wpdb->update( $wpdb->users, array( 'user_activation_key' => $hashed ), array( 'user_login' => $user->user_login ) );
@@ -2140,8 +2140,8 @@ function check_password_reset_key($key, $login) {
 		return new WP_Error('invalid_key', __('Invalid key'));
 
 	if ( empty( $wp_hasher ) ) {
-		require_once ABSPATH . WPINC . '/class-phpass.php';
-		$wp_hasher = new PasswordHash( 8, true );
+		require_once ABSPATH . WPINC . '/class-wp-hasher.php';
+		$wp_hasher = new WP_Hasher();
 	}
 
 	/**
@@ -2507,3 +2507,41 @@ function _wp_get_current_user() {
 
 	return $current_user;
 }
+
+/**
+ * Upgrades user's password from "portable" hashes to bcrypt.
+ */
+ function wp_upgrade_password( $check, $password, $hash, $user_id ) {
+	 if ( $check && substr( $hash, 0, 3 ) === '$P$' ) {
+		 wp_set_password( $password, $user_id );
+	 }
+
+	 return $check;
+ }
+
+ /**
+  * Tests to make sure the user's password hash can be used.
+  */
+ function wp_user_can_authenticate( $user ) {
+	 global $wp_hasher;
+
+	 if ( empty( $wp_hasher ) ) {
+		 require_once ABSPATH . WPINC . '/class-wp-hasher.php';
+		 $wp_hasher = new WP_Hasher();
+	 }
+
+	 if (!$wp_hasher->UseBcrypt() && !$wp_hasher->HashIsPortable( $user->user_pass )) {
+		 return new WP_Error(
+			 'unusable_password',
+			 __( '<strong>ERROR</strong>: Sorry, something has gone wrong and you must reset your password.' ) .
+			 '<br><a href="https://codex.wordpress.org/Foobar">' .
+			 __( 'More information' ) .
+			 '</a>' .
+			 '<br><a href="' . wp_lostpassword_url() . '">' .
+			 __( 'Reset your password' ) .
+			 '</a>'
+		 );
+	 }
+
+	 return $user;
+ }
