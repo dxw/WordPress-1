@@ -5630,3 +5630,19 @@ function wp_cache_get_last_changed( $group ) {
 
 	return $last_changed;
 }
+
+/**
+ * Documentation goes here.
+ */
+function inline_js( $javascript, $echo=true ) {
+    $attributes = "type='text/javascript'";
+    $attributes = apply_filters('inline_js_attributes', $attributes);
+
+    $output = sprintf("<script %s>%s</script>", $attributes, $javascript);
+
+    if ( $echo ) {
+        echo $output;
+    } else {
+        return $output;
+    }
+}
