@@ -3026,21 +3026,26 @@ function wp_customize_support_script() {
 		</script>
 	<![endif]-->
 	<!--[if gte IE 9]><!-->
-		<script type="text/javascript">
+        <?php
+        $js = <<<JS
 			(function() {
 				var request, b = document.body, c = 'className', cs = 'customize-support', rcs = new RegExp('(^|\\s+)(no-)?'+cs+'(\\s+|$)');
+JS;
+        if ( $cross_domain ) {
+            $js .= "request = (function(){ var xhr = new XMLHttpRequest(); return ('withCredentials' in xhr); })();";
+        } else {
+            $js .= "request = true;";
+        }
 
-		<?php	if ( $cross_domain ) : ?>
-				request = (function(){ var xhr = new XMLHttpRequest(); return ('withCredentials' in xhr); })();
-		<?php	else : ?>
-				request = true;
-		<?php	endif; ?>
-
+        $js .= <<<JS
 				b[c] = b[c].replace( rcs, ' ' );
 				// The customizer requires postMessage and CORS (if the site is cross domain)
 				b[c] += ( window.postMessage && request ? ' ' : ' no-' ) + cs;
 			}());
-		</script>
+JS;
+
+        inline_js($js);
+        ?>
 	<!--<![endif]-->
 	<?php
 }

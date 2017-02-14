@@ -1139,11 +1139,10 @@ function _print_scripts() {
 	if ( $concat = trim( $wp_scripts->concat, ', ' ) ) {
 
 		if ( !empty($wp_scripts->print_code) ) {
-			echo "\n<script type='text/javascript'>\n";
-			echo "/* <![CDATA[ */\n"; // not needed in HTML 5
-			echo $wp_scripts->print_code;
-			echo "/* ]]> */\n";
-			echo "</script>\n";
+			$js = "/* <![CDATA[ */\n"; // not needed in HTML 5
+			$js .= $wp_scripts->print_code;
+			$js .= "/* ]]> */\n";
+                        inline_js($js);
 		}
 
 		$concat = str_split( $concat, 128 );

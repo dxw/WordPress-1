@@ -219,11 +219,7 @@ class WP_Scripts extends WP_Dependencies {
 		if ( !$echo )
 			return $output;
 
-		echo "<script type='text/javascript'>\n"; // CDATA and type='text/javascript' is not needed for HTML 5
-		echo "/* <![CDATA[ */\n";
-		echo "$output\n";
-		echo "/* ]]> */\n";
-		echo "</script>\n";
+                inline_js("/* <![CDATA[ */\n$output\n/* ]]> */\n");
 
 		return true;
 	}
@@ -277,11 +273,11 @@ class WP_Scripts extends WP_Dependencies {
 		$after_handle = $this->print_inline_script( $handle, 'after', false );
 
 		if ( $before_handle ) {
-			$before_handle = sprintf( "<script type='text/javascript'>\n%s\n</script>\n", $before_handle );
+                        $before_handle = inline_js( $before_handle, false );
 		}
 
 		if ( $after_handle ) {
-			$after_handle = sprintf( "<script type='text/javascript'>\n%s\n</script>\n", $after_handle );
+                        $after_handle = inline_js( $after_handle, false );
 		}
 
 		if ( $this->do_concat ) {

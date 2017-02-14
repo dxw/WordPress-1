@@ -1219,26 +1219,22 @@ final class _WP_Editors {
 		 * @param array $mce_settings TinyMCE settings array.
 		 */
 		do_action( 'before_wp_tiny_mce', self::$mce_settings );
-		?>
 
-		<script type="text/javascript">
+                $baseurl = self::$baseurl;
+                $drag_drop_upload = self::$drag_drop_upload ? 'dragDropUpload: true,' : '';
+                $ref = self::_parse_init( $ref );
+                $js = <<<JS
 		tinyMCEPreInit = {
-			baseURL: "<?php echo self::$baseurl; ?>",
-			suffix: "<?php echo $suffix; ?>",
-			<?php
-
-			if ( self::$drag_drop_upload ) {
-				echo 'dragDropUpload: true,';
-			}
-
-			?>
-			mceInit: <?php echo $mceInit; ?>,
-			qtInit: <?php echo $qtInit; ?>,
-			ref: <?php echo self::_parse_init( $ref ); ?>,
+			baseURL: "{$baseurl}",
+			suffix: "{$suffix}",
+                        {$drag_drop_upload}
+			mceInit: {$mceInit},
+			qtInit: {$qtInit},
+			ref: {$ref},
 			load_ext: function(url,lang){var sl=tinymce.ScriptLoader;sl.markDone(url+'/langs/'+lang+'.js');sl.markDone(url+'/langs/'+lang+'_dlg.js');}
 		};
-		</script>
-		<?php
+JS;
+                inline_js( $js );
 
 		$baseurl = self::$baseurl;
 		// Load tinymce.js when running from /src, else load wp-tinymce.js.gz (production) or tinymce.min.js (SCRIPT_DEBUG)
@@ -1270,27 +1266,25 @@ final class _WP_Editors {
 		 */
 		do_action( 'wp_tiny_mce_init', self::$mce_settings );
 
-		?>
-		<script type="text/javascript">
-		<?php
+                $js = '';
 
 		if ( self::$ext_plugins )
-			echo self::$ext_plugins . "\n";
+			$js .= self::$ext_plugins . "\n";
 
 		if ( ! is_admin() )
-			echo 'var ajaxurl = "' . admin_url( 'admin-ajax.php', 'relative' ) . '";';
+			$js .= 'var ajaxurl = "' . admin_url( 'admin-ajax.php', 'relative' ) . '";';
 
-		?>
+                $js .= <<<JS
 
 		( function() {
-			var init, id, $wrap;
+			var init, id, \$wrap;
 
 			if ( typeof tinymce !== 'undefined' ) {
 				for ( id in tinyMCEPreInit.mceInit ) {
 					init = tinyMCEPreInit.mceInit[id];
-					$wrap = tinymce.$( '#wp-' + id + '-wrap' );
+					\$wrap = tinymce.\$( '#wp-' + id + '-wrap' );
 
-					if ( ( $wrap.hasClass( 'tmce-active' ) || ! tinyMCEPreInit.qtInit.hasOwnProperty( id ) ) && ! init.wp_skip_init ) {
+					if ( ( \$wrap.hasClass( 'tmce-active' ) || ! tinyMCEPreInit.qtInit.hasOwnProperty( id ) ) && ! init.wp_skip_init ) {
 						tinymce.init( init );
 
 						if ( ! window.wpActiveEditor ) {
@@ -1310,8 +1304,8 @@ final class _WP_Editors {
 				}
 			}
 		}());
-		</script>
-		<?php
+JS;
+                inline_js($js);
 
 		if ( in_array( 'wplink', self::$plugins, true ) || in_array( 'link', self::$qt_buttons, true ) ) {
 			self::wp_link_dialog();

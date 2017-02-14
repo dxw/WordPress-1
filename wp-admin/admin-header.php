@@ -73,17 +73,23 @@ wp_enqueue_script('utils');
 wp_enqueue_script( 'svg-painter' );
 
 $admin_body_class = preg_replace('/[^a-z0-9_-]+/i', '-', $hook_suffix);
-?>
-<script type="text/javascript">
+
+$ajaxurl = admin_url( 'admin-ajax.php', 'relative' );
+$thousands_separator = addslashes( $wp_locale->number_format['thousands_sep'] );
+$decimal_point = addslashes( $wp_locale->number_format['decimal_point'] );
+$is_rtl = (int) is_rtl();
+$js = <<<JS
 addLoadEvent = function(func){if(typeof jQuery!="undefined")jQuery(document).ready(func);else if(typeof wpOnload!='function'){wpOnload=func;}else{var oldonload=wpOnload;wpOnload=function(){oldonload();func();}}};
-var ajaxurl = '<?php echo admin_url( 'admin-ajax.php', 'relative' ); ?>',
-	pagenow = '<?php echo $current_screen->id; ?>',
-	typenow = '<?php echo $current_screen->post_type; ?>',
-	adminpage = '<?php echo $admin_body_class; ?>',
-	thousandsSeparator = '<?php echo addslashes( $wp_locale->number_format['thousands_sep'] ); ?>',
-	decimalPoint = '<?php echo addslashes( $wp_locale->number_format['decimal_point'] ); ?>',
-	isRtl = <?php echo (int) is_rtl(); ?>;
-</script>
+var ajaxurl = '{$ajaxurl}',
+	pagenow = '{$current_screen->id}',
+	typenow = '{$current_screen->post_type}',
+	adminpage = '{$admin_body_class}',
+	thousandsSeparator = '{$thousands_separator}',
+	decimalPoint = '{$decimal_point}',
+	isRtl = {$is_rtl};
+JS;
+inline_js($js);
+?>
 <meta name="viewport" content="width=device-width,initial-scale=1.0">
 <?php
 
@@ -195,9 +201,9 @@ $admin_body_class .= ' no-customize-support no-svg';
 $admin_body_classes = apply_filters( 'admin_body_class', '' );
 ?>
 <body class="wp-admin wp-core-ui no-js <?php echo $admin_body_classes . ' ' . $admin_body_class; ?>">
-<script type="text/javascript">
-	document.body.className = document.body.className.replace('no-js','js');
-</script>
+<?php
+inline_js("document.body.className = document.body.className.replace('no-js','js');");
+?>
 
 <?php
 // Make sure the customize body classes are correct as early as possible.
