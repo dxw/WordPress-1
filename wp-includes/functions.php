@@ -972,6 +972,51 @@ function wp_removable_query_args() {
 }
 
 /**
+ * Removes query variables used to provide user feedbacks from the current URL.
+ *
+ * @since 4.9.7
+ *
+ * @param string $canonical_id The canonical URL link tag's id attribute.
+ */
+function wp_remove_feedback_query_args( $canonical_id = 'wp-canonical' ) {
+	$query_args = array();
+
+	if ( ! is_admin() ) {
+		$query_args = wp_parse_url( $_SERVER['REQUEST_URI'], PHP_URL_QUERY );
+
+		if ( ! $query_args ) {
+			return;
+		} else {
+			$query_args = wp_parse_args( $query_args, array() );
+
+			if ( ! isset( $query_args['unapproved'] ) ) {
+				return;
+			}
+
+			// Remove the reserved query var key without altering the others.
+			$query_args = array_diff_key( $query_args, array_flip( array(
+				'unapproved',
+				'moderation-hash',
+			) ) );
+		}
+	}
+	printf( '
+<script>
+	var canonicalUrl = document.getElementById( \'%1$s\' ).href.split( \'#\' )[0],
+		qv = %2$s;
+
+	if ( \'object\' === typeof qv && undefined === qv.length ) {
+		canonicalUrl += \'?\' + Object.keys( qv ).map( k => k + \'=\' + qv[k] ).join( \'&\' );
+	}
+
+	if ( window.history.replaceState ) {
+		window.history.replaceState( null, null, canonicalUrl + window.location.hash );
+	}
+</script>
+	', $canonical_id, json_encode( $query_args ) );
+}
+
+/**
  * Walks the array while sanitizing the contents.
  *
  * @since 0.71

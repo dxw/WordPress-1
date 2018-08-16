@@ -3730,7 +3730,8 @@ function rel_canonical() {
 	$url = wp_get_canonical_url( $id );
 
 	if ( ! empty( $url ) ) {
-		echo '<link rel="canonical" href="' . esc_url( $url ) . '" />' . "\n";
+		echo '<link id="wp-canonical" rel="canonical" href="' . esc_url( $url ) . '" />' . "\n";
+		wp_remove_feedback_query_args();
 	}
 }
 

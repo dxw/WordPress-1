@@ -1692,7 +1692,11 @@ function get_comment_reply_link( $args = array(), $comment = null, $post = null 
 
 		$link = sprintf(
 			"<a rel='nofollow' class='comment-reply-link' href='%s' %s aria-label='%s'>%s</a>",
-			esc_url( add_query_arg( 'replytocom', $comment->comment_ID ) ) . "#" . $args['respond_id'],
+			esc_url( add_query_arg( array(
+				'replytocom'      => $comment->comment_ID,
+				'unapproved'      => false,
+				'moderation-hash' => false,
+			) ) ) . "#" . $args['respond_id'],
 			$data_attribute_string,
 			esc_attr( sprintf( $args['reply_to_text'], $comment->comment_author ) ),
 			$args['reply_text']
@@ -2253,6 +2257,22 @@ function comment_form( $args = array(), $post_id = null ) {
 	$commenter     = wp_get_current_commenter();
 	$user          = wp_get_current_user();
 	$user_identity = $user->exists() ? $user->display_name : '';
+	$fields        = array();
+
+	if ( has_action( 'set_comment_cookies', 'wp_set_comment_cookies' ) ) {
+		$consent = '';
+		if ( isset( $commenter['cookies_consent'] ) && true === $commenter['cookies_consent'] ) {
+			$consent = ' checked="checked"';
+
+		// User has not consent coookies, reset the $commenter to empty the comment form.
+		} else {
+			$commenter = array_fill_keys( array_keys( $commenter ), '' );
+		}
+
+		// Set cookies consent comment field.
+		$fields['cookies'] = '<p class="comment-form-cookies-consent"><input id="wp-comment-cookies-consent" name="wp-comment-cookies-consent" type="checkbox" value="yes"' . $consent . ' />' .
+							 '<label for="wp-comment-cookies-consent">' . __( 'Save my name, email, and website in this browser for the next time I comment.' ) . '</label></p>';
+	}
 
 	$args = wp_parse_args( $args );
 	if ( ! isset( $args['format'] ) ) {
@@ -2262,24 +2282,20 @@ function comment_form( $args = array(), $post_id = null ) {
 	$req      = get_option( 'require_name_email' );
 	$html_req = ( $req ? " required='required'" : '' );
 	$html5    = 'html5' === $args['format'];
-	$fields   = array(
+
+	// Set regular comment fields making sure the cookies consent is the last one.
+	$fields   = array_merge( array(
 		'author'  => '<p class="comment-form-author">' . '<label for="author">' . __( 'Name' ) . ( $req ? ' <span class="required">*</span>' : '' ) . '</label> ' .
 					 '<input id="author" name="author" type="text" value="' . esc_attr( $commenter['comment_author'] ) . '" size="30" maxlength="245"' . $html_req . ' /></p>',
 		'email'   => '<p class="comment-form-email"><label for="email">' . __( 'Email' ) . ( $req ? ' <span class="required">*</span>' : '' ) . '</label> ' .
 					 '<input id="email" name="email" ' . ( $html5 ? 'type="email"' : 'type="text"' ) . ' value="' . esc_attr( $commenter['comment_author_email'] ) . '" size="30" maxlength="100" aria-describedby="email-notes"' . $html_req . ' /></p>',
 		'url'     => '<p class="comment-form-url"><label for="url">' . __( 'Website' ) . '</label> ' .
 					 '<input id="url" name="url" ' . ( $html5 ? 'type="url"' : 'type="text"' ) . ' value="' . esc_attr( $commenter['comment_author_url'] ) . '" size="30" maxlength="200" /></p>',
-	);
+	), $fields );
 
-	if ( has_action( 'set_comment_cookies', 'wp_set_comment_cookies' ) && get_option( 'show_comments_cookies_opt_in' ) ) {
-		$consent           = empty( $commenter['comment_author_email'] ) ? '' : ' checked="checked"';
-		$fields['cookies'] = '<p class="comment-form-cookies-consent"><input id="wp-comment-cookies-consent" name="wp-comment-cookies-consent" type="checkbox" value="yes"' . $consent . ' />' .
-							 '<label for="wp-comment-cookies-consent">' . __( 'Save my name, email, and website in this browser for the next time I comment.' ) . '</label></p>';
-
-		// Ensure that the passed fields include cookies consent.
-		if ( isset( $args['fields'] ) && ! isset( $args['fields']['cookies'] ) ) {
-			$args['fields']['cookies'] = $fields['cookies'];
-		}
+	// Ensure that the passed fields include cookies consent.
+	if ( isset( $args['fields'] ) && ! isset( $args['fields']['cookies'] ) ) {
+		$args['fields']['cookies'] = $fields['cookies'];
 	}
 
 	$required_text = sprintf( ' ' . __( 'Required fields are marked %s' ), '<span class="required">*</span>' );

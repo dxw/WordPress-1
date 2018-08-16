@@ -1742,8 +1742,11 @@ function _clear_modified_cache_on_transition_comment_status( $new_status, $old_s
  * @see sanitize_comment_cookies() Use to sanitize cookies
  *
  * @since 2.0.4
+ * @since 4.9.7 Tries to get a query parameter containing the comment ID to
+ *              set the comment author data when the user has not consented
+ *              to cookies.
  *
- * @return array Comment author, email, url respectively.
+ * @return array Comment author, email, url, cookies consent respectively.
  */
 function wp_get_current_commenter() {
 	// Cookies should already be sanitized.
@@ -1763,20 +1766,40 @@ function wp_get_current_commenter() {
 		$comment_author_url = $_COOKIE[ 'comment_author_url_' . COOKIEHASH ];
 	}
 
+	$comment_author_data = compact( 'comment_author', 'comment_author_email', 'comment_author_url' );
+
+	if ( ! array_filter( $comment_author_data ) ) {
+		// Set the current commenter using the just posted comment ID.
+		if ( is_singular() && isset( $_GET['unapproved'] ) ) {
+			$comment = get_comment( $_GET['unapproved'], ARRAY_A );
+
+			if ( isset( $_GET['moderation-hash'] ) && isset( $comment['comment_date_gmt'] ) && wp_hash( $comment['comment_date_gmt'] ) === $_GET['moderation-hash'] ) {
+				$comment_author_data = array_intersect_key( $comment, $comment_author_data );
+			}
+		}
+
+		$comment_author_data['cookies_consent'] = false;
+	} else {
+		$comment_author_data['cookies_consent'] = true;
+	}
+
 	/**
 	 * Filters the current commenter's name, email, and URL.
 	 *
 	 * @since 3.1.0
+	 * @since 4.9.7 Adds the $cookies_consent argument to the
+	 *              array of current commenter variables.
 	 *
 	 * @param array $comment_author_data {
 	 *     An array of current commenter variables.
 	 *
-	 *     @type string $comment_author       The name of the author of the comment. Default empty.
-	 *     @type string $comment_author_email The email address of the `$comment_author`. Default empty.
-	 *     @type string $comment_author_url   The URL address of the `$comment_author`. Default empty.
+	 *     @type string  $comment_author       The name of the author of the comment. Default empty.
+	 *     @type string  $comment_author_email The email address of the `$comment_author`. Default empty.
+	 *     @type string  $comment_author_url   The URL address of the `$comment_author`. Default empty.
+	 *     @type boolean $cookies_consent      Whether the user consented to cookies or not. Default false.
 	 * }
 	 */
-	return apply_filters( 'wp_get_current_commenter', compact( 'comment_author', 'comment_author_email', 'comment_author_url' ) );
+	return apply_filters( 'wp_get_current_commenter', $comment_author_data );
 }
 
 /**

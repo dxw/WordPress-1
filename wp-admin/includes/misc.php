@@ -1142,12 +1142,8 @@ function wp_admin_canonical_url() {
 	$filtered_url = remove_query_arg( $removable_query_args, $current_url );
 	?>
 	<link id="wp-admin-canonical" rel="canonical" href="<?php echo esc_url( $filtered_url ); ?>" />
-	<script>
-		if ( window.history.replaceState ) {
-			window.history.replaceState( null, null, document.getElementById( 'wp-admin-canonical' ).href + window.location.hash );
-		}
-	</script>
-<?php
+	<?php
+	wp_remove_feedback_query_args( 'wp-admin-canonical' );
 }
 
 /**
